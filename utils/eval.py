@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.metrics import r2_score
 
 
-def eval(model, loader):
+def evaluate(model, loader):
     model.eval()
 
     all_preds = []
