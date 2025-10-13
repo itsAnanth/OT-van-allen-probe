@@ -3,14 +3,14 @@ import numpy as np
 from sklearn.metrics import r2_score
 
 
-def eval(model, test_loader):
+def eval(model, loader):
     model.eval()
 
     all_preds = []
     all_targets = []
 
     with torch.no_grad():
-        for X_batch, y_batch in test_loader:
+        for X_batch, y_batch in loader:
             outputs = model(X_batch)
 
             # Ensure both preds and targets are 1D numpy arrays
