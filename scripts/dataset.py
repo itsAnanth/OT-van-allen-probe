@@ -1,7 +1,10 @@
 import os
+import numpy as np
 from common.utils import load_pickle
 from torch.utils.data import TensorDataset, DataLoader
 
+
+extract_dir = '../processed_data'
 
 
 def load_data(args):
@@ -26,14 +29,14 @@ def load_data(args):
 
     columns_to_keep.extend(positional_features)
 
-    for prefix in selected_time_series_prefixes:
+    for prefix in time_series_prefixes:
         columns_to_keep.append(f"{prefix}_t_0")
 
     X_train_selected = X_train[columns_to_keep]
     X_val_selected = X_val[columns_to_keep]
     X_test_storm_selected = X_test_storm[columns_to_keep]
     
-    data = [(X_train_selected, y_train), (X_val_Selected, y_val), (X_test_storm_selected, y_test_storm)]
+    data = [(X_train_selected, y_train), (X_val_selected, y_val), (X_test_storm_selected, y_test_storm)]
     
     data_loaders = [get_dataloader(args, X, y) for X, y in data]
     return data_loaders
