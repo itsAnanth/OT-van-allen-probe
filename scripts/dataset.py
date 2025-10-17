@@ -1,10 +1,9 @@
 import os
 import numpy as np
+import torch
 from common.utils import load_pickle
 from torch.utils.data import TensorDataset, DataLoader
 
-
-extract_dir = '../processed_data'
 
 
 def load_data(args):
@@ -45,6 +44,10 @@ def load_data(args):
 def get_dataloader(args, X, y):
     SEQ_LENGTH = args.seq_length  # sequence window size
     BATCH_SIZE = args.batch_size
+    
+    if args.data_limit:
+        X = X.iloc[:20000]
+        y = y.iloc[:20000]
 
     # 1. Prepare sequences
     def create_sequences(x_df, y_df, seq_length):
@@ -61,6 +64,9 @@ def get_dataloader(args, X, y):
 
 
     X, y = create_sequences(X, y, SEQ_LENGTH)
+    
+    
+
 
     # Convert to torch tensors
     X = torch.tensor(X, dtype=torch.float32)
