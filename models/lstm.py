@@ -1,4 +1,6 @@
-# 2. Define LSTM model
+import torch
+import torch.nn as nn
+
 class FluxLSTM(nn.Module):
     def __init__(self, input_size, hidden_size, num_layers=1):
         super(FluxLSTM, self).__init__()
