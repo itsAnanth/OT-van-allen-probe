@@ -35,13 +35,14 @@ def load_data(args):
     X_val_selected = X_val[columns_to_keep]
     X_test_storm_selected = X_test_storm[columns_to_keep]
     
-    data = [(X_train_selected, y_train), (X_val_selected, y_val), (X_test_storm_selected, y_test_storm)]
+    data = [('train', X_train_selected, y_train), ('validation', X_val_selected, y_val), ('test', X_test_storm_selected, y_test_storm)]
     
-    data_loaders = [get_dataloader(args, X, y) for X, y in data]
+    data_loaders = [get_dataloader(args, name, X, y) for name, X, y in data]
     return data_loaders
     
     
-def get_dataloader(args, X, y):
+def get_dataloader(args, name, X, y):
+    print(f"Generating {name} data loader")
     SEQ_LENGTH = args.seq_length  # sequence window size
     BATCH_SIZE = args.batch_size
     
