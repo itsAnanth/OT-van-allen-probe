@@ -1,13 +1,15 @@
 import os
 import numpy as np
+import pandas as pd
 import torch
+from torch.utils.data import Dataset
 from common.utils import load_pickle
 from torch.utils.data import TensorDataset, DataLoader
 
 
-LOADER_SAVE_DIR = "dataset/loader"
 
 def load_data(args):
+        
     # load pickle files
     extract_dir = args.data_path
     X_train = load_pickle(os.path.join(extract_dir, 'X_train_norm.pkl'))
@@ -42,42 +44,64 @@ def load_data(args):
     return data_loaders
     
     
-def get_dataloader(args, name, X, y):
-    print(f"Generating {name} data loader")
-    SEQ_LENGTH = args.seq_length  # sequence window size
-    BATCH_SIZE = args.batch_size
+
+
+
+class LazySequenceDataset(Dataset):
+    def __init__(self, X_df, y_df, seq_length, convert_to_numpy=True):
+        self.seq_length = seq_length
+        self.length = len(X_df) - seq_length
+        
+        if convert_to_numpy:
+            print("Converting to numpy arrays (one-time operation)...")
+            self.X_data = X_df.values.astype(np.float32)
+            
+            # Handle different y shapes
+            if isinstance(y_df, pd.Series):
+                self.y_data = y_df.values.astype(np.float32)
+            else:
+                self.y_data = y_df.astype(np.float32)
+            
+            self.use_numpy = True
+        else:
+            self.X_data = X_df
+            self.y_data = y_df
+            self.use_numpy = False
+        
+    def __len__(self):
+        return self.length
     
+    def __getitem__(self, idx):
+        if self.use_numpy:
+            x = self.X_data[idx:idx+self.seq_length]
+            y = self.y_data[idx+self.seq_length]
+        else:
+            x = self.X_data.iloc[idx:idx+self.seq_length].values
+            y = self.y_data.iloc[idx+self.seq_length]
+        
+        # FIX: Return scalar y, not wrapped in list
+        # This ensures y has shape [batch_size] after batching
+        return torch.from_numpy(x), torch.tensor(y, dtype=torch.float32)
+    
+def get_dataloader(args, name, X, y, create_sequence=True):
+    print(f"Generating {name} data loader")
+    SEQ_LENGTH = args.seq_length
+    BATCH_SIZE = args.batch_size
+
     if args.data_limit:
         X = X.iloc[:20000]
         y = y.iloc[:20000]
 
-    # 1. Prepare sequences
-    def create_sequences(x_df, y_df, seq_length):
-        xs = []
-        ys = []
-        for i in range(len(x_df) - seq_length):
-            if (i % 10000 == 0):
-                print(f"{i}/{len(x_df) - seq_length}")
-            x = x_df.iloc[i:i+seq_length, :]  # all features except target flux column
-            y = y_df.iloc[i+seq_length]     # flux value at next timestep
-            xs.append(x)
-            ys.append(y)
-        return np.array(xs), np.array(ys)
-
-
-    X, y = create_sequences(X, y, SEQ_LENGTH)
-    
-    
-
-
-    # Convert to torch tensors
-    X = torch.tensor(X, dtype=torch.float32)
-    y = torch.tensor(y, dtype=torch.float32)
-
-    # Dataset and DataLoader
-
-    dataset = TensorDataset(X, y)
-    loader = DataLoader(dataset, batch_size=BATCH_SIZE, shuffle=True)
+    # Use lazy loading - no sequence creation upfront
+    dataset = LazySequenceDataset(X, y, SEQ_LENGTH)
+    loader = DataLoader(
+        dataset, 
+        batch_size=BATCH_SIZE, 
+        shuffle=True,
+        num_workers=4,  # Parallel data loading
+        pin_memory=True,  # Faster GPU transfer
+        prefetch_factor=2
+    )
     return loader
 
 
