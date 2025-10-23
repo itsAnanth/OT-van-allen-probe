@@ -11,7 +11,7 @@ BASE_URL = "https://zenodo.org/records/6299967/files"
 DATA_DIR = "dataset/raw"
 MAX_SHARDS = 4
 os.makedirs(DATA_DIR, exist_ok=True)
-FILENAMES = ['ch3_data.7z', 'ch11_data.7z', 'ch14_data.7z', 'ch16_data.7z']
+FILENAMES = ['ch3_data.7z', 'ch11_data.7z', 'ch14_data.7z', 'ch16_data.7z', 'ORIENT-M_model.zip']
 index_to_filename = lambda index: FILENAMES[index]
 
 def download_single_file(index):
@@ -69,20 +69,25 @@ def download_single_file(index):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Download Van Allen probe data")
     parser.add_argument("-w", "--num-workers", type=int, default=4, help="Number of parallel download workers (default: 4)")
+    parser.add_argument("-i", "--file-index", type=int, default=-1)
     args = parser.parse_args()
     
-    ids_to_download = list(range(MAX_SHARDS))
-    print(f"Downloading {len(ids_to_download)} data shards using {args.num_workers} workers...")
-    print(f"Target directory: {DATA_DIR}")
-    print()
-    with Pool(processes=args.num_workers) as pool:
-        results = list(tqdm(pool.imap_unordered(download_single_file, ids_to_download), total=len(ids_to_download)))
-        # results = pool.map(download_single_file, ids_to_download)
-        
-        
-    successful = sum(1 for success in results if success)
-    print(results)
-    print(f"Downloaded: {successful}/{len(ids_to_download)} shards to {DATA_DIR}")
+    if args.file_index != -1:
+        download_single_file(args.file_index)
+    else:
+    
+        ids_to_download = list(range(MAX_SHARDS))
+        print(f"Downloading {len(ids_to_download)} data shards using {args.num_workers} workers...")
+        print(f"Target directory: {DATA_DIR}")
+        print()
+        with Pool(processes=args.num_workers) as pool:
+            results = list(tqdm(pool.imap_unordered(download_single_file, ids_to_download), total=len(ids_to_download)))
+            # results = pool.map(download_single_file, ids_to_download)
+
+
+        successful = sum(1 for success in results if success)
+        print(results)
+        print(f"Downloaded: {successful}/{len(ids_to_download)} shards to {DATA_DIR}")
         
         
 

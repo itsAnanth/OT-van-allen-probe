@@ -4,8 +4,8 @@ from sklearn.metrics import r2_score
 
 # evaluate model
 
-def evaluate(model, loader):
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+def evaluate(model, loader, args):
+    device = torch.device(f'cuda:{args.gpu}' if torch.cuda.is_available() else 'cpu')
     
     model.eval()
 

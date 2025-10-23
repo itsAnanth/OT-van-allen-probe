@@ -11,7 +11,7 @@ from pathlib import Path
 
 def tuning(train_loader, args):
     input_size = next(iter(train_loader))[0].shape[2]
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device(f'cuda:{args.gpu}' if torch.cuda.is_available() else 'cpu')
     params_to_tune = [
         # ('seq_length', range(4000, 10000, 1000)),
         ('hidden_size', [64, 128, 256, 512])
@@ -54,7 +54,7 @@ def train(model, train_loader, val_loader, args):
     metrics = []
     
 
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    device = torch.device(f'cuda:{args.gpu}' if torch.cuda.is_available() else 'cpu')
     
     if model is None:
         print("No model detected, defaulting to FluxLSTM")
@@ -85,7 +85,7 @@ def train(model, train_loader, val_loader, args):
         epoch_loss /= len(train_loader.dataset)
         print(f"Epoch {epoch+1}/{args.max_epochs}, Loss: {epoch_loss:.4f}")
         
-        r2_score = evaluate(model, val_loader)
+        r2_score = evaluate(model, val_loader, args)
         metrics.append({
             'loss': epoch_loss,
             'rscore': r2_score
@@ -99,11 +99,12 @@ def train(model, train_loader, val_loader, args):
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train Models")
+    parser.add_argument("--gpu", type=int, default=0)
     parser.add_argument("--tune", action="store_true")
     parser.add_argument("--lr", type=float, default=1e-03)
     parser.add_argument("--max_epochs", type=int, default=10)
     parser.add_argument("--data_path", type=str, default='../processed_data')
-    parser.add_argument("--seq_length", type=int, default=500)
+    parser.add_argument("--seq_length", type=int, default=6000) # 6000 after tuning
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--channel", type=int, default=3)
     parser.add_argument("--data_limit", action="store_true", help="slice data for testing")
@@ -125,7 +126,11 @@ def parse_args():
     )
     
     args, remaining_args = parser.parse_known_args()
+    
     assert remaining_args == [], remaining_args
+    
+    if torch.cuda.is_available() and args.gpu not in range(0, torch.cuda.device_count()):
+        raise ValueError(f"Invalid gpu id {args.gpu}")
     
     if args.channel == 3:
         args.positional_features = ["ED_R_OP77Q_intxt", "ED_MLAT_OP77Q_intxt", "ED_MLT_OP77Q_intxt_sin", "ED_MLT_OP77Q_intxt_cos"]
