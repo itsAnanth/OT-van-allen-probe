@@ -9,6 +9,13 @@ from scripts.dataset import load_data
 from scripts.eval import evaluate
 from pathlib import Path
 
+"""
+
+    TODO: LOGIC ERROR
+    same train loader used for all the tuning hyper params
+    dataset should change for params like seq_length
+"""
+
 def tuning(train_loader, args):
     input_size = next(iter(train_loader))[0].shape[2]
     device = torch.device(f'cuda:{args.gpu}' if torch.cuda.is_available() else 'cpu')
