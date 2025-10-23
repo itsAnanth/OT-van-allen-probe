@@ -5,7 +5,7 @@ from common.utils import load_pickle
 from torch.utils.data import TensorDataset, DataLoader
 
 
-LOADER_SAVE_DIR = ""
+LOADER_SAVE_DIR = "dataset/loader"
 
 def load_data(args):
     # load pickle files
