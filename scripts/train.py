@@ -13,7 +13,8 @@ def tuning(train_loader, args):
     input_size = next(iter(train_loader))[0].shape[2]
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     params_to_tune = [
-        ('seq_length', range(4000, 10000, 1000))
+        # ('seq_length', range(4000, 10000, 1000)),
+        ('hidden_size', [64, 128, 256, 512])
     ]
     
     os.makedirs("tuning", exist_ok=True)  # works in os too
