@@ -131,7 +131,7 @@ def parse_args():
     parser.add_argument("--tune", action="store_true")
     parser.add_argument("--lr", type=float, default=1e-03)
     parser.add_argument("--max-epochs", type=int, default=10)
-    parser.add_argument("--data-path", type=str, default='dataset/processed')
+    parser.add_argument("--data-path", type=str, default='dataset/preprocessed')
     parser.add_argument("--seq-length", type=int, default=600) # 6000 after tuning
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--channel", type=int, default=3)
