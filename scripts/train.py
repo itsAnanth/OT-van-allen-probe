@@ -4,6 +4,7 @@ import os
 import torch.nn as nn
 import pickle as pkl
 from tqdm import tqdm
+from common.utils import set_random_seed, append_to_pickle
 from models.lstm import FluxLSTM
 from scripts.dataset import load_data
 from scripts.eval import evaluate
@@ -16,35 +17,52 @@ from pathlib import Path
     dataset should change for params like seq_length
 """
 
-def tuning(train_loader, args):
-    input_size = next(iter(train_loader))[0].shape[2]
+def tuning(args):
     device = torch.device(f'cuda:{args.gpu}' if torch.cuda.is_available() else 'cpu')
-    params_to_tune = [
-        # ('seq_length', range(4000, 10000, 1000)),
-        ('hidden_size', [64, 128, 256, 512])
-    ]
+    params_to_tune_map = {
+        'seq_length': range(500, 6500, 500),
+        'hidden_size': [64, 128, 256, 512]
+    }
     
     os.makedirs("tuning", exist_ok=True)  # works in os too
 
     
+    if args.tune_param is None:
+        params_to_tune = list(params_to_tune_map.items())
+    else:
+        assert args.tune_param in params_to_tune_map.keys(), "invalid parameter to tune"
+        params_to_tune = [(args.tune_param, params_to_tune_map[args.tune_param])]
+        
+    print("debug", params_to_tune)
+    
     
     for param, param_range in params_to_tune:
         
-        param_metrics = []
+        param_file_path = f"tuning/{param}.pkl"
         
         print(f"computing optimal value for {param}")
         for value in param_range:
             print(f"Training parameter {param} with value {value}")
             setattr(args, param, value)
-            model = FluxLSTM(input_size, args.hidden_size).to(device)
-            _, metrics = train(model, train_loader, test_loader, args)
+            train_loader, val_loader, test_loader = load_data(args)
+            input_size = next(iter(train_loader))[0].shape[2]
             
-            param_metrics.append({
+            model = FluxLSTM(input_size, args.hidden_size).to(device)
+            metrics = train(model, train_loader, test_loader, args)
+            
+            metric = {
                 'value': value,
                 'metrics': metrics
-            })
-            print("-" * 20)
-        print(f"metric for {param} = {param_metrics}")
+            }
+            
+            append_to_pickle(param_file_path, metric)
+            print(f"metric for {param} = {param_metrics}")
+            
+            
+            del train_loader, val_loader, test_loader, model
+            torch.cuda.empty_cache()
+            gc.collect()
+            print("-" * 50, end='\n')
         print("-" * 50, end="\n")
 
         
@@ -100,7 +118,7 @@ def train(model, train_loader, val_loader, args):
         print(f"Validation r2 score: {r2_score}")
         
         
-    return model, metrics
+    return metrics
         
     
 
@@ -111,11 +129,12 @@ def parse_args():
     parser.add_argument("--lr", type=float, default=1e-03)
     parser.add_argument("--max_epochs", type=int, default=10)
     parser.add_argument("--data_path", type=str, default='../processed_data')
-    parser.add_argument("--seq_length", type=int, default=6000) # 6000 after tuning
+    parser.add_argument("--seq_length", type=int, default=600) # 6000 after tuning
     parser.add_argument("--batch_size", type=int, default=64)
     parser.add_argument("--channel", type=int, default=3)
     parser.add_argument("--data_limit", action="store_true", help="slice data for testing")
     parser.add_argument("--hidden_size", type=int, default=64)
+    parser.add_argument("--tune-param", type=str, default=None)
 
 
     parser.add_argument(
@@ -148,11 +167,12 @@ def parse_args():
     
     
 if __name__ == "__main__":
+    set_random_seed()
     args = parse_args()
-    train_loader, val_loader, test_loader = load_data(args)
     
     if args.tune:
-        tuning(train_loader, args)
+        tuning(args)
     else:
+        train_loader, val_loader, test_loader = load_data(args)
         train(train_loader, args)
     
