@@ -1,10 +1,53 @@
 import pickle 
 import argparse
+import os
+import random
+import numpy as np
+import torch
 
+def set_random_seed(seed: int = 42) -> None:
+    """
+    Set random seed for Python, NumPy, and PyTorch (CPU and GPU).
+
+    Args:
+        seed (int): Random seed value.
+    """
+    # Python built-in random
+    random.seed(seed)
+    # NumPy
+    np.random.seed(seed)
+    # Torch
+    torch.manual_seed(seed)
+    torch.cuda.manual_seed(seed)
+    torch.cuda.manual_seed_all(seed)  # if you are using multi-GPU
 
 def load_pickle(file_path):
     with open(file_path, 'rb') as f:
-        return pickle.load(f)
+        data = None
+        try:
+            data = pickle.load(f)
+        except EOFError as e:
+            data = None
+            print(f"pickle file loading error: {e}")
+            
+def write_pickle(file_path, data):
+    with open(file_path, 'wb') as f:
+            pkl.dump(data, f)
+
+def append_to_pickle(file_path, new_item):
+    # If file doesn't exist, start a new list
+    if not os.path.exists(file_path):
+        data = []
+    else:
+        loaded = load_pickle(file_path)
+        data = loaded if loaded is not None else []
+
+    # Append the new item
+    data.append(new_item)
+
+    # Write back the full list
+    write_pickle(file_path, data)
+
     
     
 def parse_args():
