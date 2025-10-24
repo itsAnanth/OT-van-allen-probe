@@ -11,7 +11,7 @@ from torch.utils.data import TensorDataset, DataLoader
 def load_data(args):
         
     # load pickle files
-    extract_dir = args.data_path
+    extract_dir = f"{args.data_path}/{args.channel}"
     X_train = load_pickle(os.path.join(extract_dir, 'X_train_norm.pkl'))
     y_train = load_pickle(os.path.join(extract_dir, 'y_train.pkl'))
 
