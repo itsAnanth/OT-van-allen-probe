@@ -21,6 +21,7 @@ def load_data(args):
     #Out of sample storm data
     X_test_storm = load_pickle(os.path.join(extract_dir, 'X_test_storm_norm.pkl'))
     y_test_storm = load_pickle(os.path.join(extract_dir, 'y_test_storm.pkl'))
+    
 
     
     # extract relevant features

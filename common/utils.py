@@ -20,15 +20,26 @@ def set_random_seed(seed: int = 42) -> None:
     torch.manual_seed(seed)
     torch.cuda.manual_seed(seed)
     torch.cuda.manual_seed_all(seed)  # if you are using multi-GPU
+    
+def print_gpu_memory(tag=""):
+    if torch.cuda.is_available():
+        allocated = torch.cuda.memory_allocated() / (1024 ** 2)
+        reserved = torch.cuda.memory_reserved() / (1024 ** 2)
+        print(f"[GPU {tag}] Allocated: {allocated:.2f} MB | Reserved: {reserved:.2f} MB")
+    else:
+        print("[GPU] CUDA not available.")
 
 def load_pickle(file_path):
+    data = None
+    
     with open(file_path, 'rb') as f:
-        data = None
         try:
             data = pickle.load(f)
         except EOFError as e:
             data = None
             print(f"pickle file loading error: {e}")
+            
+    return data
             
 def write_pickle(file_path, data):
     with open(file_path, 'wb') as f:

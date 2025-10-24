@@ -4,7 +4,7 @@ import os
 import torch.nn as nn
 import pickle as pkl
 from tqdm import tqdm
-from common.utils import set_random_seed, append_to_pickle
+from common.utils import set_random_seed, append_to_pickle, print_gpu_memory
 from models.lstm import FluxLSTM
 from scripts.dataset import load_data
 from scripts.eval import evaluate
@@ -20,7 +20,7 @@ from pathlib import Path
 def tuning(args):
     device = torch.device(f'cuda:{args.gpu}' if torch.cuda.is_available() else 'cpu')
     params_to_tune_map = {
-        'seq_length': range(500, 6500, 500),
+        'seq_length': range(500, 2500, 500),
         'hidden_size': [64, 128, 256, 512]
     }
     
@@ -32,11 +32,11 @@ def tuning(args):
     else:
         assert args.tune_param in params_to_tune_map.keys(), "invalid parameter to tune"
         params_to_tune = [(args.tune_param, params_to_tune_map[args.tune_param])]
-        
-    print("debug", params_to_tune)
     
     
     for param, param_range in params_to_tune:
+        
+        print_gpu_memory(f"before tuning {param}")
         
         param_file_path = f"tuning/{param}.pkl"
         
@@ -62,6 +62,9 @@ def tuning(args):
             del train_loader, val_loader, test_loader, model
             torch.cuda.empty_cache()
             gc.collect()
+            
+            print_gpu_memory(f"after tuning {param}")
+            
             print("-" * 50, end='\n')
         print("-" * 50, end="\n")
 
