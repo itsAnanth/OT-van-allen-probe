@@ -3,6 +3,7 @@ import argparse
 import os
 import torch.nn as nn
 import pickle as pkl
+import gc
 from tqdm import tqdm
 from common.utils import set_random_seed, append_to_pickle, print_gpu_memory
 from models.lstm import FluxLSTM
@@ -56,7 +57,7 @@ def tuning(args):
             }
             
             append_to_pickle(param_file_path, metric)
-            print(f"metric for {param} = {param_metrics}")
+            print(f"metric for {param} = {metric}")
             
             
             del train_loader, val_loader, test_loader, model
@@ -70,11 +71,8 @@ def tuning(args):
 
         
         
-        print(f"Writing metrics to tuning/{param}")
-        with open(f"tuning/{param}.pkl", 'wb') as f:
-            pkl.dump(param_metrics, f)
-        print("Finished writing\n")
-            
+        print(f"Finished tuning {param}")
+
 
 
 
@@ -85,6 +83,8 @@ def train(model, train_loader, val_loader, args):
     device = torch.device(f'cuda:{args.gpu}' if torch.cuda.is_available() else 'cpu')
     
     if model is None:
+        input_size = next(iter(train_loader))[0].shape[2]
+
         print("No model detected, defaulting to FluxLSTM")
         model = FluxLSTM(input_size, args.hidden_size).to(device)
         
@@ -130,13 +130,13 @@ def parse_args():
     parser.add_argument("--gpu", type=int, default=0)
     parser.add_argument("--tune", action="store_true")
     parser.add_argument("--lr", type=float, default=1e-03)
-    parser.add_argument("--max_epochs", type=int, default=10)
-    parser.add_argument("--data_path", type=str, default='../processed_data')
-    parser.add_argument("--seq_length", type=int, default=600) # 6000 after tuning
-    parser.add_argument("--batch_size", type=int, default=64)
+    parser.add_argument("--max-epochs", type=int, default=10)
+    parser.add_argument("--data-path", type=str, default='../processed_data')
+    parser.add_argument("--seq-length", type=int, default=600) # 6000 after tuning
+    parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--channel", type=int, default=3)
-    parser.add_argument("--data_limit", action="store_true", help="slice data for testing")
-    parser.add_argument("--hidden_size", type=int, default=64)
+    parser.add_argument("--data-limit", action="store_true", help="slice data for testing")
+    parser.add_argument("--hidden-size", type=int, default=64)
     parser.add_argument("--tune-param", type=str, default=None)
 
 
