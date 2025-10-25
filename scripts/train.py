@@ -177,5 +177,6 @@ if __name__ == "__main__":
         tuning(args)
     else:
         train_loader, val_loader, test_loader = load_data(args)
-        train(train_loader, args)
+        metrics = train(model=None, train_loader=train_loader, val_loader=val_loader, args=args)
+        append_to_pickle('tuning/final.pkl', metrics)
     
