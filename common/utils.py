@@ -59,6 +59,12 @@ def append_to_pickle(file_path, new_item):
 
     # Write back the full list
     write_pickle(file_path, data)
+    
+    
+def save_checkpoint(file_path, file_name, data):
+    os.makedirs(file_path, exist_ok=True)
+    
+    write_pickle(f"{file_path}/{file_name}", data)
 
     
     
