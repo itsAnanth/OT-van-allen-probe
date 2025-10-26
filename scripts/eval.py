@@ -29,8 +29,7 @@ def evaluate(model, loader, args):
 
     # R² score
     r2 = r2_score(all_targets, all_preds)
-    print("R² Score:", r2)
-    
+        
     model.train()
 
     return r2
