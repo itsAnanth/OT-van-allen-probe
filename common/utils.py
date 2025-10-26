@@ -64,7 +64,7 @@ def append_to_pickle(file_path, new_item):
 def save_checkpoint(file_path, file_name, data):
     os.makedirs(file_path, exist_ok=True)
     
-    write_pickle(f"{file_path}/{file_name}", data)
+    torch.save(f"{file_path}/{file_name}", data)
 
     
     
