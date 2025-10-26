@@ -119,7 +119,7 @@ def train(model, train_loader, val_loader, args):
         print(f"Validation r2 score: {r2_score}")
         
         if config.checkpoint:
-            checkpoint_name = f"54kev_{epoch + 1}.pkl"
+            checkpoint_name = f"54kev_{epoch + 1}.pth"
             checkpoint_data = {
                 'epoch': epoch + 1,
                 'model_state_dict': model.state_dict(),
