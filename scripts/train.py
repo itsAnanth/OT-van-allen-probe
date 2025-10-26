@@ -5,18 +5,15 @@ import torch.nn as nn
 import pickle as pkl
 import gc
 from tqdm import tqdm
-from common.utils import set_random_seed, append_to_pickle, print_gpu_memory
+from common.config import Config
+from common.utils import set_random_seed, append_to_pickle, print_gpu_memory, save_checkpoint
 from models.lstm import FluxLSTM
 from scripts.dataset import load_data
 from scripts.eval import evaluate
 from pathlib import Path
 
-"""
 
-    TODO: LOGIC ERROR
-    same train loader used for all the tuning hyper params
-    dataset should change for params like seq_length
-"""
+config = Config()
 
 def tuning(args):
     device = torch.device(f'cuda:{args.gpu}' if torch.cuda.is_available() else 'cpu')
@@ -114,11 +111,23 @@ def train(model, train_loader, val_loader, args):
         print(f"Epoch {epoch+1}/{args.max_epochs}, Loss: {epoch_loss:.4f}")
         
         r2_score = evaluate(model, val_loader, args)
-        metrics.append({
+        metric = {
             'loss': epoch_loss,
             'rscore': r2_score
-        })
+        }
+        metrics.append(metric)
         print(f"Validation r2 score: {r2_score}")
+        
+        if config.checkpoint:
+            checkpoint_name = f"54kev_{epoch + 1}.pkl"
+            checkpoint_data = {
+                'epoch': epoch + 1,
+                'model_state_dict': model.state_dict(),
+                'optimizer_state_dict': optimizer.state_dict(),
+                'metrics': metric
+            }
+            print(f"Saving model checkpoint to {config.checkpoint_dir}/{checkpoint_name}")
+            save_checkpoint(config.checkpoint_dir, checkpoint_name, checkpoint_data)
         
         
     return metrics
@@ -138,6 +147,7 @@ def parse_args():
     parser.add_argument("--data-limit", action="store_true", help="slice data for testing")
     parser.add_argument("--hidden-size", type=int, default=512)
     parser.add_argument("--tune-param", type=str, default=None)
+    
 
 
     parser.add_argument(
@@ -174,8 +184,10 @@ if __name__ == "__main__":
     args = parse_args()
     
     if args.tune:
+        config.checkpoint = False
         tuning(args)
     else:
+        config.checkpoint = True
         train_loader, val_loader, test_loader = load_data(args)
         metrics = train(model=None, train_loader=train_loader, val_loader=val_loader, args=args)
         append_to_pickle('tuning/final.pkl', metrics)
