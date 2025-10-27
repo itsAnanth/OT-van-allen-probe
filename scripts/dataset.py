@@ -5,13 +5,14 @@ import torch
 from torch.utils.data import Dataset
 from common.utils import load_pickle
 from torch.utils.data import TensorDataset, DataLoader
+from common.config import Config
 
 
 
-def load_data(args):
+def load_data(args: Config):
         
     # load pickle files
-    extract_dir = f"{args.data_path}/{args.channel}"
+    extract_dir = f"{args.data_dir}/{args.channel}"
     X_train = load_pickle(os.path.join(extract_dir, 'X_train_norm.pkl'))
     y_train = load_pickle(os.path.join(extract_dir, 'y_train.pkl'))
 
@@ -25,8 +26,8 @@ def load_data(args):
 
     
     # extract relevant features
-    positional_features = args.positional_features
-    time_series_prefixes = args.time_series_prefixes
+    positional_features = args.channel_data['positional_features']
+    time_series_prefixes = args.channel_data['time_series_features']
     
     columns_to_keep = []
 
@@ -84,7 +85,7 @@ class LazySequenceDataset(Dataset):
         # This ensures y has shape [batch_size] after batching
         return torch.from_numpy(x), torch.tensor(y, dtype=torch.float32)
     
-def get_dataloader(args, name, X, y, create_sequence=True):
+def get_dataloader(args: Config, name, X, y, create_sequence=True):
     print(f"Generating {name} data loader")
     SEQ_LENGTH = args.seq_length
     BATCH_SIZE = args.batch_size
