@@ -30,11 +30,13 @@ class Config:
     data_dir: str = 'dataset/preprocessed'
     
     checkpoint: bool = False
+    checkpoint_epoch: int = -1
     checkpoint_dir: str = 'checkpoints'
     load_from_checkpoint: bool = False
     channel: int = 3
     channel_name: str = CHANNEL_MAP[channel]['name']
     channel_data = CHANNEL_MAP[channel]
+    device=None
     
     
     # hyperparams

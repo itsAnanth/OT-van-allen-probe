@@ -65,6 +65,18 @@ def save_checkpoint(file_path, file_name, data):
     os.makedirs(file_path, exist_ok=True)
     
     torch.save(data, f"{file_path}/{file_name}")
+    
+def load_checkpoint(epoch, model, optimizer, config):
+    if not os.path.exists(config.checkpoint_dir):
+        raise FileNotFoundError(f"Checkpoint directory {config.checkpoint_dir} not found")
+    
+    checkpoint_path = os.path.join(config.checkpoint_dir, f"{config.channel_name}_{epoch}.pth")
+    checkpoint_data = torch.load(checkpoint_path, weights_only=True, map_location=config.device)
+    model.load_state_dict(checkpoint_data['model_state_dict'])
+    optimizer.load_state_dict(checkpoint_data['optimizer_state_dict'])
+    
+    print(f"Loaded checkpoint from: {checkpoint_path}")
+    return model, optimizer
 
     
     

@@ -6,7 +6,7 @@ import pickle as pkl
 import gc
 from tqdm import tqdm
 from common.config import Config
-from common.utils import set_random_seed, append_to_pickle, print_gpu_memory, save_checkpoint
+from common.utils import set_random_seed, append_to_pickle, print_gpu_memory, save_checkpoint, load_checkpoint
 from models.lstm import FluxLSTM
 from scripts.dataset import load_data
 from scripts.eval import evaluate
@@ -77,6 +77,7 @@ def train(model, train_loader, val_loader, config: Config):
     
 
     device = torch.device(f'cuda:{config.gpu}' if torch.cuda.is_available() else 'cpu')
+    config.device = device
     
     if model is None:
         input_size = next(iter(train_loader))[0].shape[2]
@@ -86,9 +87,13 @@ def train(model, train_loader, val_loader, config: Config):
         
     criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
-
+    epoch_start = 0 if config.checkpoint_epoch == -1 else config.checkpoint + 1
     print(f"Using device: {device}")
 
+    
+    if config.checkpoint_epoch != -1:
+        print("loading checkpoint")
+        model, optimizer = load_checkpoint(config.checkpoint_epoch, model, optimizer, config)
 
     for epoch in range(config.max_epochs):
         model.train()
@@ -154,6 +159,8 @@ def parse_args():
     parser.add_argument("--data-limit", action="store_true", help="slice data for testing")
     parser.add_argument("--hidden-size", type=int, default=512)
     parser.add_argument("--tune-param", type=str, default=None)
+    parser.add_argument("--checkpoint-epoch", type=int, default=-1)
+    
     
 
 
