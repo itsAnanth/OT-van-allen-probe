@@ -87,7 +87,7 @@ def train(model, train_loader, val_loader, config: Config):
         
     criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
-    epoch_start = 0 if config.checkpoint_epoch == -1 else config.checkpoint + 1
+    epoch_start = 0 if config.checkpoint_epoch == -1 else config.checkpoint
     print(f"Using device: {device}")
 
     
@@ -95,7 +95,7 @@ def train(model, train_loader, val_loader, config: Config):
         print("loading checkpoint")
         model, optimizer = load_checkpoint(config.checkpoint_epoch, model, optimizer, config)
 
-    for epoch in range(config.max_epochs):
+    for epoch in range(epoch_start, config.max_epochs):
         model.train()
         epoch_loss = 0
         for xb, yb in tqdm(train_loader, total=len(train_loader)):
