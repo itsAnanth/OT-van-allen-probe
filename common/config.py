@@ -47,7 +47,7 @@ class Config:
     gpu: int = 0
     tune: bool = False
     tune_param: str = None
-    data_limt: bool = False
+    data_limit: bool = False
     
     def __setattr__(self, name, value):
         super().__setattr__(name, value)
