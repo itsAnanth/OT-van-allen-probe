@@ -5,22 +5,29 @@ CHANNEL_MAP = {
     3: {
         'name': '54kev',
         'positional_features': ["ED_R_OP77Q_intxt", "ED_MLAT_OP77Q_intxt", "ED_MLT_OP77Q_intxt_sin", "ED_MLT_OP77Q_intxt_cos"],
-        'time_series_features': ["AE_INDEX", "flow_speed", "SYM_H", "Pressure"]
+        'time_series_features': ["AE_INDEX", "flow_speed", "SYM_H", "Pressure"],
+        'best_params': {
+            'seq_length': 1500,
+            'hidden_size': 512
+        }
     }, 
     11: {
         'name': '235kev',
         'positional_features': None,
-        'time_series_features': None    
+        'time_series_features': None,
+        'best_params': {}   
     }, 
     14: {
         'name': '597kev',
         'positional_features': None,
-        'time_series_features': None    
+        'time_series_features': None,
+        'best_params': {}   
     }, 
     16: {
         'name': '909kev',
         'positional_features': None,
-        'time_series_features': None    
+        'time_series_features': None,
+        'best_params': {}    
     } 
 }
 
