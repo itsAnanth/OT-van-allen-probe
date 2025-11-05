@@ -2,6 +2,7 @@ import os
 import numpy as np
 import pandas as pd
 import torch
+import random
 from torch.utils.data import Dataset
 from common.utils import load_pickle
 from torch.utils.data import TensorDataset, DataLoader
@@ -52,34 +53,59 @@ def load_data(args: Config):
 class LazySequenceDataset(Dataset):
     def __init__(self, X_df, y_df, seq_length, convert_to_numpy=True):
         self.seq_length = seq_length
-        self.length = len(X_df) - seq_length
+        
+        X_data = None
+        y_data = None
         
         if convert_to_numpy:
             print("Converting to numpy arrays (one-time operation)...")
-            self.X_data = X_df.values.astype(np.float32)
+            X_data = X_df.values.astype(np.float32)
             
             # Handle different y shapes
             if isinstance(y_df, pd.Series):
-                self.y_data = y_df.values.astype(np.float32)
+                y_data = y_df.values.astype(np.float32)
             else:
-                self.y_data = y_df.astype(np.float32)
+                y_data = y_df.astype(np.float32)
             
             self.use_numpy = True
+            
+            self.X_a_data = X_data[::2]
+            self.X_b_data = X_data[1::2]
+            self.y_a_data = y_data[::2]
+            self.y_b_data = y_data[1::2]
+            
+            self.len_a = len(self.X_a_data)
+            self.len_b = len(self.X_b_data)
         else:
-            self.X_data = X_df
-            self.y_data = y_df
-            self.use_numpy = False
+            raise Exception("non numpy dataset not allowed")
+            # self.X_data = X_df
+            # self.y_data = y_df
+            # self.use_numpy = False
         
     def __len__(self):
-        return self.length
+        return self.len_a + self.len_b
     
     def __getitem__(self, idx):
-        if self.use_numpy:
-            x = self.X_data[idx:idx+self.seq_length]
-            y = self.y_data[idx+self.seq_length]
+        
+        probe = random.choice(['a', 'b'])
+        start = random.randint(0, (self.len_a if probe == 'a' else self.len_b) - self.seq_length - 1)
+        
+        if probe == 'a':
+            
+            x = self.X_a_data[start:start + self.seq_length]
+            y = self.y_a_data[start + self.seq_length]
         else:
-            x = self.X_data.iloc[idx:idx+self.seq_length].values
-            y = self.y_data.iloc[idx+self.seq_length]
+            
+            x = self.X_a_data[start:start + self.seq_length]
+            y = self.y_a_data[start + self.seq_length] 
+        
+        x 
+        # if self.use_numpy:
+        #     x = self.X_data[idx:idx+self.seq_length]
+        #     y = self.y_data[idx+self.seq_length]
+        # else:
+        #     x = self.X_data.iloc[idx:idx+self.seq_length].values
+        #     y = self.y_data.iloc[idx+self.seq_length]
         
         # FIX: Return scalar y, not wrapped in list
         # This ensures y has shape [batch_size] after batching

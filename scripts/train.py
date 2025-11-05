@@ -157,7 +157,7 @@ def parse_args():
     parser.add_argument("--channel", type=int, default=3)
     parser.add_argument("--load-from-checkpoint", action="store_true")
     parser.add_argument("--data-limit", action="store_true", help="slice data for testing")
-    parser.add_argument("--hidden-size", type=int, default=512)
+    parser.add_argument("--hidden-size", type=int, default=64)
     parser.add_argument("--tune-param", type=str, default=None)
     parser.add_argument("--checkpoint-epoch", type=int, default=-1)
     
