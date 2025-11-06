@@ -5,14 +5,8 @@ import torch.nn as nn
 import pickle as pkl
 import gc
 from tqdm import tqdm
-from common.config import Config
-from common.utils import 
-    set_random_seed, 
-    append_to_pickle, 
-    print_gpu_memory, 
-    save_checkpoint, 
-    load_checkpoint, 
-    get_checkpoints_dir
+from common.config import Config, save_config
+from common.utils import set_random_seed, append_to_pickle, print_gpu_memory, save_checkpoint, load_checkpoint, get_checkpoints_dir, autodetect_device
 from models.lstm import FluxLSTM
 from scripts.dataset import load_data
 from scripts.eval import evaluate
@@ -21,7 +15,6 @@ from dataclasses import fields
 
 
 def tuning(config: Config):
-    device = torch.device(f'cuda:{config.gpu}' if torch.cuda.is_available() else 'cpu')
     params_to_tune_map = {
         'seq_length': range(500, 2500, 500),
         'hidden_size': [64, 128, 256, 512]
@@ -50,7 +43,7 @@ def tuning(config: Config):
             train_loader, val_loader, test_loader = load_data(config)
             input_size = next(iter(train_loader))[0].shape[2]
             
-            model = FluxLSTM(input_size, config.hidden_size).to(device)
+            model = FluxLSTM(input_size, config.hidden_size).to(config.device)
             metrics = train(model, train_loader, test_loader, config)
             
             metric = {
@@ -80,16 +73,15 @@ def tuning(config: Config):
 
 def train(model, train_loader, val_loader, config: Config):
     metrics = []
-    
 
-    device = torch.device(f'cuda:{config.gpu}' if torch.cuda.is_available() else 'cpu')
-    config.device = device
+    print("saving model config")
+    save_config(config)
     
     if model is None:
         input_size = next(iter(train_loader))[0].shape[2]
 
         print("No model detected, defaulting to FluxLSTM")
-        model = FluxLSTM(input_size, config.hidden_size).to(device)
+        model = FluxLSTM(input_size, config.hidden_size).to(config.device)
         
 
         
@@ -97,20 +89,20 @@ def train(model, train_loader, val_loader, config: Config):
         
     criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
-    epoch_start = 0 if config.checkpoint_epoch == -1 else config.checkpoint_epoch
-    print(f"Using device: {device}")
+    epoch_start = 0 if config.load_from_checkpoint == -1 else config.load_from_checkpoint
+    print(f"Using device: {config.device}")
 
     
-    if config.checkpoint_epoch != -1:
+    if config.load_from_checkpoint != -1:
         print("loading checkpoint")
-        model, optimizer = load_checkpoint(config.checkpoint_epoch, model, optimizer, config)
+        model, optimizer = load_checkpoint(config.load_from_checkpoint, model, optimizer, config)
 
     for epoch in range(epoch_start, config.max_epochs):
         model.train()
         epoch_loss = 0
         for xb, yb in tqdm(train_loader, total=len(train_loader)):
-            xb = xb.to(device)
-            yb = yb.to(device)
+            xb = xb.to(config.device)
+            yb = yb.to(config.device)
             
             
 
@@ -132,7 +124,7 @@ def train(model, train_loader, val_loader, config: Config):
         metrics.append(metric)
         print(f"Validation r2 score: {r2_score}")
         
-        if config.checkpoint:
+        if config.save_checkpoint:
             checkpoint_name = f"54kev_{epoch + 1}.pth"
             checkpoint_data = {
                 'epoch': epoch + 1,
@@ -165,24 +157,19 @@ def parse_args():
     parser.add_argument("--seq-length", type=int, default=1500)
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--channel", type=int, default=3)
-    parser.add_argument("--load-from-checkpoint", action="store_true")
     parser.add_argument("--data-limit", action="store_true", help="slice data for testing")
     parser.add_argument("--hidden-size", type=int, default=512)
     parser.add_argument("--tune-param", type=str, default=None)
-    parser.add_argument("--checkpoint-epoch", type=int, default=-1)
+
+    parser.add_argument("--save-checkpoint", type=bool, default=True)
     parser.add_argument("--checkpoint-dir", type=str, default='checkpoints')
-    
-    
-    
+    parser.add_argument("--load-from-checkpoint", type=int, default=-1)
 
 
     
     config, remaining_args = parser.parse_known_args()
     
     assert remaining_args == [], remaining_args
-    
-    if torch.cuda.is_available() and config.gpu not in range(0, torch.cuda.device_count()):
-        raise ValueError(f"Invalid gpu id {config.gpu}")
     
 
     return config
@@ -196,13 +183,18 @@ if __name__ == "__main__":
     config = parse_args()
     config = config_from_args(Config, config)
 
-    config.checkpoint_dir = get_checkpoints_dir(config)
+    if config.save_checkpoint:
+        config.checkpoint_dir = get_checkpoints_dir(config)
+        print(f"Setting checkpoint dir as {config.checkpoint_dir}")
+
+
+    config.device = autodetect_device(config)
     
     if config.tune:
-        config.checkpoint = False
+        config.save_checkpoint = False
         tuning(config)
     else:
-        config.checkpoint = True
+        config.save_checkpoint = True
         train_loader, val_loader, test_loader = load_data(config)
         metrics = train(model=None, train_loader=train_loader, val_loader=val_loader, config=config)
         append_to_pickle('tuning/final.pkl', metrics)
