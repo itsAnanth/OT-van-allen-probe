@@ -187,8 +187,6 @@ if __name__ == "__main__":
         config.checkpoint_dir = get_checkpoints_dir(config)
         print(f"Setting checkpoint dir as {config.checkpoint_dir}")
 
-
-    config.device = autodetect_device(config)
     
     if config.tune:
         config.save_checkpoint = False

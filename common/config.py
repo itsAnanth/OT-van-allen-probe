@@ -1,6 +1,7 @@
 import json
 import os
 from dataclasses import dataclass, asdict
+from common.utils import autodetect_device
 
 
 CHANNEL_MAP = { 
@@ -58,6 +59,9 @@ class Config:
     tune: bool = False
     tune_param: str = None
     data_limit: bool = False
+
+    def __post_init__(self):
+        self.device = autodetect_device(self)
     
     def __setattr__(self, name, value):
         super().__setattr__(name, value)
@@ -67,6 +71,10 @@ class Config:
             super().__setattr__("channel_data", CHANNEL_MAP[value])
 
 
+        
+    
+
+
 def save_config(config):
 
     os.makedirs(config.checkpoint_dir, exist_ok=True)
@@ -74,3 +82,11 @@ def save_config(config):
     # Convert to dict then JSON and save
     with open(f"{config.checkpoint_dir}/config.json", "w") as f:
         json.dump(asdict(config), f, indent=4)
+
+def load_config(config_dir):
+    with open(os.path.join(config_dir, "config.json"), "r") as f:
+        cfg_dict = json.load(f)
+
+    # Recreate Config object
+    cfg = Config(**cfg_dict)
+    return cfg
