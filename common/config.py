@@ -67,7 +67,7 @@ class Config:
             super().__setattr__("channel_data", CHANNEL_MAP[value])
 
 
-def save_config(config)
+def save_config(config):
 
     os.makedirs(config.checkpoint_dir, exist_ok=True)
 
