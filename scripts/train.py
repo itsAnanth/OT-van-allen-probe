@@ -6,7 +6,13 @@ import pickle as pkl
 import gc
 from tqdm import tqdm
 from common.config import Config
-from common.utils import set_random_seed, append_to_pickle, print_gpu_memory, save_checkpoint, load_checkpoint
+from common.utils import 
+    set_random_seed, 
+    append_to_pickle, 
+    print_gpu_memory, 
+    save_checkpoint, 
+    load_checkpoint, 
+    get_checkpoints_dir
 from models.lstm import FluxLSTM
 from scripts.dataset import load_data
 from scripts.eval import evaluate
@@ -189,6 +195,8 @@ if __name__ == "__main__":
     set_random_seed()
     config = parse_args()
     config = config_from_args(Config, config)
+
+    config.checkpoint_dir = get_checkpoints_dir(config)
     
     if config.tune:
         config.checkpoint = False

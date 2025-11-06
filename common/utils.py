@@ -5,6 +5,11 @@ import os
 import random
 import numpy as np
 import torch
+from datetime import datetime, timezone, timedelta
+import os
+
+
+
 
 def set_random_seed(seed: int = 42) -> None:
     """
@@ -112,3 +117,12 @@ def parse_args():
     if args.channel == 3:
         args.positional_features = ["ED_R_OP77Q_intxt", "ED_MLAT_OP77Q_intxt", "ED_MLT_OP77Q_intxt_sin", "ED_MLT_OP77Q_intxt_cos"]
     return parser, args
+
+
+def get_checkpoints_dir(config):
+    IST = timezone(timedelta(hours=5, minutes=30))
+    timestamp = datetime.now(IST).strftime('%d-%m-%Y_%H-%M-%S')
+
+    
+    print(config.checkpoint_dir)
+    return f"{config.checkpoint_dir}/{'tune/' if config.tune else ''}{config.channel_name}/{timestamp}"
