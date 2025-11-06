@@ -1,4 +1,6 @@
-from dataclasses import dataclass
+import json
+import os
+from dataclasses import dataclass, asdict
 
 
 CHANNEL_MAP = { 
@@ -36,10 +38,9 @@ class Config:
     
     data_dir: str = 'dataset/preprocessed'
     
-    checkpoint: bool = False
-    checkpoint_epoch: int = -1
+    save_checkpoint: bool = False
     checkpoint_dir: str = 'checkpoints'
-    load_from_checkpoint: bool = False
+    load_from_checkpoint: int = -1
     channel: int = 3
     channel_name: str = CHANNEL_MAP[channel]['name']
     channel_data = CHANNEL_MAP[channel]
@@ -64,3 +65,12 @@ class Config:
         if name == "channel":
             super().__setattr__("channel_name", CHANNEL_MAP[value]['name'])
             super().__setattr__("channel_data", CHANNEL_MAP[value])
+
+
+def save_config(config)
+
+    os.makedirs(config.checkpoint_dir, exist_ok=True)
+
+    # Convert to dict then JSON and save
+    with open(f"{config.checkpoint_dir}/config.json", "w") as f:
+        json.dump(asdict(config), f, indent=4)
