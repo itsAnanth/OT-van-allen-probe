@@ -10,7 +10,8 @@ from common.utils import set_random_seed, append_to_pickle, print_gpu_memory, sa
 from models.lstm import FluxLSTM
 from scripts.dataset import load_data
 from scripts.eval import evaluate
-from dataclasses import fields
+from dataclasses import fields, asdict
+from pprint import pprint
 
 
 
@@ -167,12 +168,12 @@ def parse_args():
 
 
     
-    config, remaining_args = parser.parse_known_args()
+    args, remaining_args = parser.parse_known_args()
     
     assert remaining_args == [], remaining_args
     
 
-    return config
+    return args
     
 
     
@@ -182,6 +183,8 @@ if __name__ == "__main__":
     set_random_seed()
     config = parse_args()
     config = config_from_args(Config, config)
+
+    pprint(asdict(config))
 
     if config.save_checkpoint:
         config.checkpoint_dir = get_checkpoints_dir(config)
