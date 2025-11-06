@@ -127,13 +127,17 @@ def get_checkpoints_dir(config):
     print(config.checkpoint_dir)
     return f"{config.checkpoint_dir}/{'tune/' if config.tune else ''}{config.channel_name}/{timestamp}"
 
-def autodetect_device():
+def autodetect_device(config):
     if torch.cuda.is_available():
         device_type = 'cuda'
+
+        assert config.gpu in range(0, torch.cuda.device_count()), "Invalid gpu id"
+
+        device_type = f"cuda:{config.gpu}"
     elif torch.backends.mps.is_available():
         device_type = 'mps'
     else:
         device_type = 'cpu'
         
-    logger.info(f"Autodetected device type as {device_type}")
+    print(f"Autodetected device type as {device_type}")
     return device_type
