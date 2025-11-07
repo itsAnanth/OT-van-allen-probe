@@ -115,15 +115,19 @@ def train(model, train_loader, val_loader, config: Config):
             epoch_loss += loss.item() * xb.size(0)
 
         epoch_loss /= len(train_loader.dataset)
-        print(f"Epoch {epoch+1}/{config.max_epochs}, Loss: {epoch_loss:.4f}")
+        print(f"Epoch {epoch+1}/{config.max_epochs}")
         
-        r2_score = evaluate(model, val_loader, config)
+        r2_score, val_loss = evaluate(model, val_loader, config, criterion)
         metric = {
-            'loss': epoch_loss,
+            'train_loss': epoch_loss,
+            'val_loss': val_loss,
             'rscore': r2_score
         }
         metrics.append(metric)
+        print(f"Training loss: {epoch_loss}")
+        print(f"Validation loss: {val_loss}")
         print(f"Validation r2 score: {r2_score}")
+        print("-" * 50)
         
         if config.save_checkpoint:
             checkpoint_name = f"54kev_{epoch + 1}.pth"
@@ -159,7 +163,7 @@ def parse_args():
     parser.add_argument("--batch-size", type=int, default=64)
     parser.add_argument("--channel", type=int, default=3)
     parser.add_argument("--data-limit", action="store_true", help="slice data for testing")
-    parser.add_argument("--hidden-size", type=int, default=512)
+    parser.add_argument("--hidden-size", type=int, default=64)
     parser.add_argument("--tune-param", type=str, default=None)
 
     parser.add_argument("--save-checkpoint", type=bool, default=True)
@@ -184,7 +188,11 @@ if __name__ == "__main__":
     config = parse_args()
     config = config_from_args(Config, config)
 
+    
     pprint(asdict(config))
+
+    model_description = input("Enter a brief description for this model (Enter to skip): ")
+    config.description = model_description
 
     if config.save_checkpoint:
         config.checkpoint_dir = get_checkpoints_dir(config)
