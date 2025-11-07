@@ -1,0 +1,18 @@
+{
+    "description": "model trained using 1500 seq length and 64 hidden size",
+    "data_dir": "dataset/preprocessed",
+    "save_checkpoint": true,
+    "checkpoint_dir": "checkpoints/54kev/07-11-2025_10-27-48",
+    "load_from_checkpoint": -1,
+    "channel": 3,
+    "channel_name": "54kev",
+    "lr": 0.001,
+    "max_epochs": 20,
+    "seq_length": 1500,
+    "batch_size": 64,
+    "hidden_size": 64,
+    "gpu": 3,
+    "tune": false,
+    "tune_param": null,
+    "data_limit": false
+}
