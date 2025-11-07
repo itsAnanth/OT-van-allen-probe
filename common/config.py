@@ -37,6 +37,7 @@ CHANNEL_MAP = {
 @dataclass
 class Config:
     
+    description: str = ""
     data_dir: str = 'dataset/preprocessed'
     
     save_checkpoint: bool = False
