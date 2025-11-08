@@ -16,8 +16,8 @@ CHANNEL_MAP = {
     }, 
     11: {
         'name': '235kev',
-        'positional_features': None,
-        'time_series_features': None,
+        'positional_features': ["ED_R_OP77Q_intxt", "ED_MLAT_OP77Q_intxt", "ED_MLT_OP77Q_intxt_sin", "ED_MLT_OP77Q_intxt_cos"],
+        'time_series_features': ["AL_INDEX", "flow_speed", "SYM_H", "Pressure"],
         'best_params': {}   
     }, 
     14: {
