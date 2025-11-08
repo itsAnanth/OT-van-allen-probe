@@ -34,7 +34,8 @@ def tuning(config: Config):
     for param, param_range in params_to_tune:
         
         print_gpu_memory(f"before tuning {param}")
-        
+
+        os.makedirs(f"tuning/{config.channel_name}", exist_ok=True)
         param_file_path = f"tuning/{config.channel_name}/{param}.pkl"
         
         print(f"computing optimal value for {param}")
