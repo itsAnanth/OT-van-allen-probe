@@ -35,7 +35,7 @@ def tuning(config: Config):
         
         print_gpu_memory(f"before tuning {param}")
         
-        param_file_path = f"tuning/{param}.pkl"
+        param_file_path = f"tuning/{config.channel_name}/{param}.pkl"
         
         print(f"computing optimal value for {param}")
         for value in param_range:
