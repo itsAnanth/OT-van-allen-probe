@@ -17,7 +17,7 @@ from pprint import pprint
 
 def tuning(config: Config):
     params_to_tune_map = {
-        'seq_length': range(500, 2500, 500),
+        'seq_length': range(1000, 10000, 1000),
         'hidden_size': [64, 128, 256, 512]
     }
     
