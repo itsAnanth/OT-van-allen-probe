@@ -12,6 +12,8 @@ from common.config import Config
 
 def load_data(args: Config):
         
+    print(f"Loading data for channel {args.channel} - {args.channel_name}")
+    print(f"Data dir : {args.data_dir}/{args.channel}")
     # load pickle files
     extract_dir = f"{args.data_dir}/{args.channel}"
     X_train = load_pickle(os.path.join(extract_dir, 'X_train_norm.pkl'))
@@ -30,7 +32,7 @@ def load_data(args: Config):
     positional_features = args.channel_data['positional_features']
     time_series_prefixes = args.channel_data['time_series_features']
     
-    columns_to_keep = []
+    columns_to_keep = ['spacecraft']
 
     columns_to_keep.extend(positional_features)
 
@@ -54,13 +56,14 @@ class LazySequenceDataset(Dataset):
     def __init__(self, X_df, y_df, seq_length, convert_to_numpy=True):
         self.seq_length = seq_length
         
-        X_data = None
-        y_data = None
+        X_data = X_df
+        y_data = y_df
         
         if convert_to_numpy:
             print("Converting to numpy arrays (one-time operation)...")
-            X_data = X_df.values.astype(np.float32)
             
+            
+            print("data lengths:", len(X_data), len(y_data))
             # Handle different y shapes
             if isinstance(y_df, pd.Series):
                 y_data = y_df.values.astype(np.float32)
@@ -68,14 +71,19 @@ class LazySequenceDataset(Dataset):
                 y_data = y_df.astype(np.float32)
             
             self.use_numpy = True
-            
-            self.X_a_data = X_data[::2]
-            self.X_b_data = X_data[1::2]
-            self.y_a_data = y_data[::2]
-            self.y_b_data = y_data[1::2]
-            
+
+            self.X_a_data = X_data[X_data['spacecraft'] == 'A'].drop(columns=['spacecraft'])
+            self.X_b_data = X_data[X_data['spacecraft'] == 'B'].drop(columns=['spacecraft'])
+            self.y_a_data = y_data[X_data['spacecraft'] == 'A']
+            self.y_b_data = y_data[X_data['spacecraft'] == 'B']
+
+            self.X_a_data = self.X_a_data.values.astype(np.float32)
+            self.X_b_data = self.X_b_data.values.astype(np.float32)
+
             self.len_a = len(self.X_a_data)
             self.len_b = len(self.X_b_data)
+
+            print(f"Probe A data length: {self.len_a}, Probe B data length: {self.len_b}")
         else:
             raise Exception("non numpy dataset not allowed")
             # self.X_data = X_df
@@ -88,18 +96,16 @@ class LazySequenceDataset(Dataset):
     def __getitem__(self, idx):
         
         probe = random.choice(['a', 'b'])
-        start = random.randint(0, (self.len_a if probe == 'a' else self.len_b) - self.seq_length - 1)
-        
+        max_start = (self.len_a if probe == 'a' else self.len_b) - self.seq_length - 1
+        start = random.randint(0, max_start)
+
         if probe == 'a':
-            
             x = self.X_a_data[start:start + self.seq_length]
             y = self.y_a_data[start + self.seq_length]
         else:
-            
-            x = self.X_a_data[start:start + self.seq_length]
-            y = self.y_a_data[start + self.seq_length] 
+            x = self.X_b_data[start:start + self.seq_length]
+            y = self.y_b_data[start + self.seq_length] 
         
-        x 
         # if self.use_numpy:
         #     x = self.X_data[idx:idx+self.seq_length]
         #     y = self.y_data[idx+self.seq_length]
