@@ -32,6 +32,22 @@ def extract(args):
                 archive.extractall(path=f"{EXTRACT_DIR}")
 
                 
+
+def label_spacecraft(df, time_col='unix_time'):
+    t = df[time_col].astype(float).values
+    diffs = np.diff(t)
+    neg_jumps = np.where(diffs < 0)[0]
+
+    df = df.copy()
+    if len(neg_jumps) > 0:
+        split_idx = neg_jumps[0] + 1
+        df.loc[:split_idx-1, 'spacecraft'] = 'A'
+        df.loc[split_idx:, 'spacecraft'] = 'B'
+        print(f"A→B transition at index {split_idx}")
+    else:
+        df['spacecraft'] = 'A'
+        print("No A→B transition found (all labeled 'A')")
+    return df
                 
 def preprocess(args):
     for key, value in channels.items():
@@ -42,7 +58,19 @@ def preprocess(args):
         print(f"Preprocessing {value}.pkl")
         df = pd.read_pickle(f"{EXTRACT_DIR}/{value}.pkl")
 
+
+        if key == 16:
+            df = df.sort_index()
+            print("Sorted index for ch16.")
+
+        # Check if the index is sorted
+        is_index_sorted = df.index.is_monotonic_increasing
+        print(f"Is index increasing? {is_index_sorted}")
+
         df['datetime'] = pd.to_datetime(df['unix_time'], unit='s') #to datetime conversion
+
+        df = label_spacecraft(df, time_col='unix_time')
+
         df.set_index('datetime', inplace=True) #new index
         df.sort_index(inplace=True) #sorting for splitting later
         df['target'] = np.log10(df['eflux'] + 1) #log transformation to eflux column along with handling 0 by adding 1
