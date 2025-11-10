@@ -9,7 +9,7 @@ from multiprocessing import Pool
 
 BASE_URL = "https://zenodo.org/records/6299967/files"
 DATA_DIR = "dataset/raw"
-MAX_SHARDS = 4
+MAX_SHARDS = 5
 os.makedirs(DATA_DIR, exist_ok=True)
 FILENAMES = ['ch3_data.7z', 'ch11_data.7z', 'ch14_data.7z', 'ch16_data.7z', 'ORIENT-M_model.zip']
 index_to_filename = lambda index: FILENAMES[index]
