@@ -1,6 +1,7 @@
 import torch
 import os
 import argparse
+import torch.nn as nn
 from scripts.eval import evaluate
 from scripts.dataset import load_data
 from models.lstm import FluxLSTM
@@ -25,6 +26,7 @@ if __name__ == "__main__":
 
 
     config = load_config(args.checkpoint_dir)
+    criterion = nn.MSELoss()
 
     train_loader, val_loader, test_loader = load_data(config)
 
@@ -34,6 +36,6 @@ if __name__ == "__main__":
 
     model.load_state_dict(torch.load(os.path.join(config.checkpoint_dir, args.model), map_location=config.device)['model_state_dict'])
 
-    print(evaluate(model, test_loader, config))
+    print(evaluate(model, test_loader, config, criterion))
 
 
