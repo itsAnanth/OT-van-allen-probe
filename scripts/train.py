@@ -91,6 +91,13 @@ def train(model, train_loader, val_loader, config: Config):
         
     criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
+    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+        optimizer,
+        mode='min',      # we want to minimize validation loss
+        factor=0.5,      # reduce lr by this factor
+        patience=5,      # wait 5 epochs with no improvement
+    )
+
     epoch_start = 0 if config.load_from_checkpoint == -1 else config.load_from_checkpoint
     print(f"Using device: {config.device}")
 
@@ -119,6 +126,7 @@ def train(model, train_loader, val_loader, config: Config):
         print(f"Epoch {epoch+1}/{config.max_epochs}")
         
         r2_score, val_loss = evaluate(model, val_loader, config, criterion)
+        scheduler.step(val_loss)
         metric = {
             'train_loss': epoch_loss,
             'val_loss': val_loss,
@@ -188,6 +196,7 @@ if __name__ == "__main__":
     set_random_seed()
     config = parse_args()
     config = config_from_args(Config, config)
+    config.save_checkpoint = not config.tune
 
     
     pprint(asdict(config))
@@ -201,11 +210,8 @@ if __name__ == "__main__":
 
     
     if config.tune:
-        config.save_checkpoint = False
         tuning(config)
     else:
-        config.save_checkpoint = True
         train_loader, val_loader, test_loader = load_data(config)
         metrics = train(model=None, train_loader=train_loader, val_loader=val_loader, config=config)
-        append_to_pickle('tuning/final.pkl', metrics)
     
