@@ -144,6 +144,7 @@ def train(model, train_loader, val_loader, config: Config):
                 'epoch': epoch + 1,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
+                'scheduler_state_dict': scheduler.state_dict(),
                 'metrics': metric
             }
             print(f"Saving model checkpoint to {config.checkpoint_dir}/{checkpoint_name}")
