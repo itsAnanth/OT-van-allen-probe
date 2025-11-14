@@ -134,10 +134,11 @@ def get_dataloader(args: Config, name, X, y, create_sequence=True):
         shuffle=True,
         num_workers=4,  # Parallel data loading
         pin_memory=True,  # Faster GPU transfer
-        prefetch_factor=2
+        prefetch_factor=2,
+        drop_last=True  # Drop incomplete batches to avoid batch_size=1
     )
     return loader
 
 
 
-    
+
