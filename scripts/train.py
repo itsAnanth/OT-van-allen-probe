@@ -5,9 +5,8 @@ import torch.nn as nn
 import pickle as pkl
 import gc
 from tqdm import tqdm
-from common.config import Config, save_config
+from common.config import Config, save_config, get_model_class
 from common.utils import set_random_seed, append_to_pickle, print_gpu_memory, save_checkpoint, load_checkpoint, get_checkpoints_dir, autodetect_device
-from models.lstm import FluxLSTM
 from scripts.dataset import load_data
 from scripts.eval import evaluate
 from dataclasses import fields, asdict
@@ -18,6 +17,7 @@ from pprint import pprint
 def tuning(config: Config):
     params_to_tune_map = {
         'seq_length': range(1000, 10000, 1000),
+        # 'seq_length': [2000],
         'hidden_size': [64, 128, 256, 512]
     }
     
@@ -45,8 +45,9 @@ def tuning(config: Config):
             train_loader, val_loader, test_loader = load_data(config)
             input_size = next(iter(train_loader))[0].shape[2]
             
-            model = FluxLSTM(input_size, config.hidden_size).to(config.device)
-            metrics = train(model, train_loader, test_loader, config)
+            ModelClass = get_model_class(config.channel)
+            model = ModelClass(input_size, config.hidden_size).to(config.device)
+            metrics = train(model, train_loader, val_loader, config) #changed here from test_loader to val_loader
             
             metric = {
                 'value': value,
@@ -82,8 +83,9 @@ def train(model, train_loader, val_loader, config: Config):
     if model is None:
         input_size = next(iter(train_loader))[0].shape[2]
 
-        print("No model detected, defaulting to FluxLSTM")
-        model = FluxLSTM(input_size, config.hidden_size).to(config.device)
+        ModelClass = get_model_class(config.channel)
+        print(f"No model detected, using {ModelClass.__name__} for channel {config.channel}")
+        model = ModelClass(input_size, config.hidden_size).to(config.device)
         
 
         
@@ -91,12 +93,13 @@ def train(model, train_loader, val_loader, config: Config):
         
     criterion = nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=config.lr)
-    scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
-        optimizer,
-        mode='min',      # we want to minimize validation loss
-        factor=0.5,      # reduce lr by this factor
-        patience=5,      # wait 5 epochs with no improvement
-    )
+    #remove comment to use scheduler 
+    # scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(
+    #     optimizer,
+    #     mode='min',      # we want to minimize validation loss
+    #     factor=0.5,      # reduce lr by this factor
+    #     patience=5,      # wait 5 epochs with no improvement
+    # )
 
     epoch_start = 0 if config.load_from_checkpoint == -1 else config.load_from_checkpoint
     print(f"Using device: {config.device}")
@@ -126,7 +129,8 @@ def train(model, train_loader, val_loader, config: Config):
         print(f"Epoch {epoch+1}/{config.max_epochs}")
         
         r2_score, val_loss = evaluate(model, val_loader, config, criterion)
-        scheduler.step(val_loss)
+        #remove comment to use scheduler
+        #scheduler.step(val_loss)
         metric = {
             'train_loss': epoch_loss,
             'val_loss': val_loss,
@@ -139,12 +143,12 @@ def train(model, train_loader, val_loader, config: Config):
         print("-" * 50)
         
         if config.save_checkpoint:
-            checkpoint_name = f"54kev_{epoch + 1}.pth"
+            checkpoint_name = f"{config.channel_name}_{epoch + 1}.pth"
             checkpoint_data = {
                 'epoch': epoch + 1,
                 'model_state_dict': model.state_dict(),
                 'optimizer_state_dict': optimizer.state_dict(),
-                'scheduler_state_dict': scheduler.state_dict(),
+                # 'scheduler_state_dict': scheduler.state_dict(),
                 'metrics': metric
             }
             print(f"Saving model checkpoint to {config.checkpoint_dir}/{checkpoint_name}")
