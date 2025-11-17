@@ -4,8 +4,7 @@ import argparse
 import torch.nn as nn
 from scripts.eval import evaluate
 from scripts.dataset import load_data
-from models.lstm import FluxLSTM
-from common.config import Config, load_config
+from common.config import Config, load_config, get_model_class
 from common.utils import autodetect_device, set_random_seed
 
 
@@ -32,7 +31,8 @@ if __name__ == "__main__":
 
     input_size = next(iter(train_loader))[0].shape[2]
 
-    model = FluxLSTM(input_size, config.hidden_size).to(config.device)
+    ModelClass = get_model_class(config.channel)
+    model = ModelClass(input_size, config.hidden_size).to(config.device)
 
     model.load_state_dict(torch.load(os.path.join(config.checkpoint_dir, args.model), map_location=config.device)['model_state_dict'])
 
