@@ -23,8 +23,7 @@ def evaluate(model, loader, args, criterion):
 
             loss = criterion(outputs, y_batch)
 
-            total_loss += loss.item()
-            num_batches += 1
+            total_loss += loss.item() * X_batch.size(0)
 
             # Ensure both preds and targets are 1D numpy arrays
             all_preds.append(outputs.view(-1).cpu().numpy())
@@ -36,7 +35,7 @@ def evaluate(model, loader, args, criterion):
 
     # R² score
     r2 = r2_score(all_targets, all_preds)
-    avg_loss = total_loss / num_batches
+    avg_loss = total_loss / len(loader.dataset)
         
     model.train()
 
